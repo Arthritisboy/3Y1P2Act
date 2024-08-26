@@ -36,6 +36,7 @@ class _HomeState extends State<Home> {
 
   final fnameController = TextEditingController();
   final lnameController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   String? selectedylevel;
 
@@ -111,6 +112,140 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void _showStudentDialog({Student? student}) {
+    if (student != null) {
+      fnameController.text = student.first_name;
+      lnameController.text = student.last_name;
+      selectedylevel = student.year_level;
+      isEnrolled = student.enrolled;
+    } else {
+      fnameController.clear();
+      lnameController.clear();
+      selectedylevel = null;
+      isEnrolled = false;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(student != null ? 'Edit Student' : 'Add Student'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: fnameController,
+                      decoration: const InputDecoration(
+                          labelText: 'Student First Name'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a first name';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: lnameController,
+                      decoration:
+                          const InputDecoration(labelText: 'Student Last Name'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a last name';
+                        }
+                        return null;
+                      },
+                    ),
+                    DropdownButtonFormField<String>(
+                      hint: Text('Select Year Level'),
+                      value: selectedylevel,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedylevel = newValue;
+                        });
+                      },
+                      items: ylevels.map((String year) {
+                        return DropdownMenuItem<String>(
+                          value: year,
+                          child: Text(year),
+                        );
+                      }).toList(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a year level';
+                        }
+                        return null;
+                      },
+                    ),
+                    SwitchListTile(
+                      title: Text('Enrolled'),
+                      value: isEnrolled,
+                      onChanged: (value) {
+                        setState(() {
+                          isEnrolled = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  if (student != null) {
+                    updateStudent(
+                      student.id,
+                      fnameController.text,
+                      lnameController.text,
+                      selectedylevel!,
+                      isEnrolled,
+                    ).then((_) {
+                      setState(() {});
+                      Navigator.pop(context);
+                    }).catchError((error) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed to edit student: $error')),
+                      );
+                    });
+                  } else {
+                    addStudent(
+                      fnameController.text,
+                      lnameController.text,
+                      selectedylevel!,
+                      isEnrolled,
+                    ).then((_) {
+                      setState(() {});
+                      Navigator.pop(context);
+                    }).catchError((error) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed to add student: $error')),
+                      );
+                    });
+                  }
+                }
+              },
+              child: Text(student != null ? 'Edit' : 'Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,123 +279,7 @@ class _HomeState extends State<Home> {
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () {
-                                      fnameController.text = student.first_name;
-                                      lnameController.text = student.last_name;
-                                      selectedylevel = student.year_level;
-                                      isEnrolled = student.enrolled;
-                                      showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: Text('Edit Student'),
-                                              content: StatefulBuilder(
-                                                builder: (BuildContext context,
-                                                    StateSetter setState) {
-                                                  return Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      TextFormField(
-                                                        controller:
-                                                            fnameController,
-                                                        decoration:
-                                                            const InputDecoration(
-                                                                labelText:
-                                                                    'Student First Name'),
-                                                      ),
-                                                      TextFormField(
-                                                        controller:
-                                                            lnameController,
-                                                        decoration:
-                                                            const InputDecoration(
-                                                                labelText:
-                                                                    'Student Last Name'),
-                                                      ),
-                                                      DropdownButton<String>(
-                                                        hint: Text(
-                                                            'Select Year Level'),
-                                                        value: selectedylevel,
-                                                        onChanged:
-                                                            (String? newValue) {
-                                                          setState(() {
-                                                            selectedylevel =
-                                                                newValue;
-                                                          });
-                                                        },
-                                                        items: ylevels
-                                                            .map((String year) {
-                                                          return DropdownMenuItem<
-                                                              String>(
-                                                            value: year,
-                                                            child: Text(year),
-                                                          );
-                                                        }).toList(),
-                                                      ),
-                                                      SwitchListTile(
-                                                        title: Text('Enrolled'),
-                                                        value: isEnrolled,
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            isEnrolled = value;
-                                                          });
-                                                        },
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    if (selectedylevel !=
-                                                        null) {
-                                                      updateStudent(
-                                                        student.id,
-                                                        fnameController.text,
-                                                        lnameController.text,
-                                                        selectedylevel!,
-                                                        isEnrolled,
-                                                      ).then((_) {
-                                                        setState(() {
-                                                          fnameController
-                                                              .clear();
-                                                          lnameController
-                                                              .clear();
-                                                          selectedylevel = null;
-                                                        });
-                                                        Navigator.pop(context);
-                                                      }).catchError((error) {
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
-                                                          SnackBar(
-                                                            content: Text(
-                                                                'Failed to edit student: $error'),
-                                                          ),
-                                                        );
-                                                      });
-                                                    } else {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                              'Please select a year level.'),
-                                                        ),
-                                                      );
-                                                    }
-                                                  },
-                                                  child: Text('Edit'),
-                                                ),
-                                              ],
-                                            );
-                                          });
+                                      _showStudentDialog(student: student);
                                     },
                                   ),
                                 ],
@@ -279,96 +298,7 @@ class _HomeState extends State<Home> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: Text('Add Student'),
-                  content: StatefulBuilder(
-                    builder: (BuildContext context, StateSetter setState) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextFormField(
-                            controller: fnameController,
-                            decoration: const InputDecoration(
-                                labelText: 'Student First Name'),
-                          ),
-                          TextFormField(
-                            controller: lnameController,
-                            decoration: const InputDecoration(
-                                labelText: 'Student Last Name'),
-                          ),
-                          DropdownButton<String>(
-                            hint: Text('Select Year Level'),
-                            value: selectedylevel,
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                selectedylevel = newValue;
-                              });
-                            },
-                            items: ylevels.map((String year) {
-                              return DropdownMenuItem<String>(
-                                value: year,
-                                child: Text(year),
-                              );
-                            }).toList(),
-                          ),
-                          SwitchListTile(
-                            title: Text('Enrolled'),
-                            value: isEnrolled,
-                            onChanged: (value) {
-                              setState(() {
-                                isEnrolled = value;
-                              });
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        if (selectedylevel != null) {
-                          addStudent(
-                            fnameController.text,
-                            lnameController.text,
-                            selectedylevel!,
-                            isEnrolled,
-                          ).then((_) {
-                            setState(() {
-                              fnameController.clear();
-                              lnameController.clear();
-                              selectedylevel = null;
-                            });
-                            Navigator.pop(context);
-                          }).catchError((error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to add student: $error'),
-                              ),
-                            );
-                          });
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Please select a year level.'),
-                            ),
-                          );
-                        }
-                      },
-                      child: Text('Add'),
-                    ),
-                  ],
-                );
-              });
+          _showStudentDialog();
         },
         tooltip: 'Add Student',
         child: const Icon(Icons.add),
