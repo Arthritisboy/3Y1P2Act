@@ -20,10 +20,10 @@ let studentList = [
 ];
 
 //Routes
-app.get("/api/v1/items", (req, res) => {
+app.get("/api/v1/students", (req, res) => {
   return res.json(studentList);
 });
-app.post("/api/v1/items", (req, res) => {
+app.post("/api/v1/students", (req, res) => {
   let newStudent = {
     id: studentList.length + 1,
     first_name: req.body.first_name,
@@ -34,10 +34,16 @@ app.post("/api/v1/items", (req, res) => {
   studentList.push(newStudent);
   res.status(201).json(newStudent);
 });
-app.put("/api/v1/items/:id", (req, res) => {
-  let studentId = req.params.id;
-  let updatedStudent = req.body;
-  let index = itemList.findIndex((student) => student.id === studentId);
+app.put("/api/v1/students/:id", (req, res) => {
+  let studentId = +req.params.id;
+  let updatedStudent = {
+    id: studentId,
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+    year_level: req.body.year_level,
+    enrolled: req.body.enrolled,
+  };
+  let index = studentList.findIndex((student) => student.id === studentId);
 
   if (index !== -1) {
     studentList[index] = updatedStudent;
@@ -46,7 +52,17 @@ app.put("/api/v1/items/:id", (req, res) => {
     res.status(404).json({ message: "Student not found" });
   }
 });
-app.delete("/api/v1/items/:id", (req, res) => {});
+app.delete("/api/v1/students/:id", (req, res) => {
+  let studentId = +req.params.id;
+  let index = studentList.findIndex((student) => student.id === studentId);
+
+  if (index !== -1) {
+    let deletedStudent = studentList.splice(index, 1);
+    res.json(deletedStudent[0]);
+  } else {
+    res.status(404);
+  }
+});
 
 //Listeners
 app.listen(port, () => {
