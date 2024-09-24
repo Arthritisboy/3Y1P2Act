@@ -8,16 +8,7 @@ const port = 3000;
 //Middleware config
 app.use(express.json());
 
-//Define Item list
-let studentList = [
-  {
-    id: 1,
-    first_name: "first name",
-    last_name: "last name",
-    year_level: "Year level",
-    enrolled: true,
-  },
-];
+let studentList = [];
 
 //Routes
 app.get("/api/v1/students", (req, res) => {
@@ -29,6 +20,7 @@ app.post("/api/v1/students", (req, res) => {
     first_name: req.body.first_name,
     last_name: req.body.last_name,
     year_level: req.body.year_level,
+    course: req.body.course,
     enrolled: req.body.enrolled,
   };
   studentList.push(newStudent);
@@ -41,6 +33,7 @@ app.put("/api/v1/students/:id", (req, res) => {
     first_name: req.body.first_name,
     last_name: req.body.last_name,
     year_level: req.body.year_level,
+    course: req.body.course,
     enrolled: req.body.enrolled,
   };
   let index = studentList.findIndex((student) => student.id === studentId);
